@@ -1,8 +1,9 @@
 #ifndef SNAPSHOT_REFRESH_HEADER
-#define SNAPSHOT_REFERSH_HEADER
+#define SNAPSHOT_REFRESH_HEADER
 
 #include<bits/stdc++.h>
 #include"binaryConvertor.h"
+#include "utils.h"
 
 struct SnapShotRefreshGroup{
     int64_t entry_px;
@@ -40,13 +41,15 @@ struct SnapShotFullRefresh{
     int32_t rpt_seq;
     int64_t transact_time;
     int64_t update_time;
+    SnapShotRefreshGroups ssrgs = NULL;
     SnapShotFullRefresh(const u_char* packet){
+        printPacket(packet, 116);
         this->lastmsgSeqNumProcessed = convertBinaryToInt64(packet, 0, 4, true);
         this->security_id = convertBinaryToInt64(packet, 8, 4, true);
         this->rpt_seq = convertBinaryToInt64(packet, 12, 4, true);
         this->transact_time = convertBinaryToInt64(packet, 16, 8, true);
         this->update_time = convertBinaryToInt64(packet, 24, 8, true);
-        SnapShotRefreshGroups ssrgs = SnapShotRefreshGroups(packet + 59);
+        // SnapShotRefreshGroups ssrgs = SnapShotRefreshGroups(packet + 59);
     }
 };
 
