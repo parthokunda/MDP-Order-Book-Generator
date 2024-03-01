@@ -40,4 +40,11 @@ void printPacket(const u_char* packet, int len){
     }
     std::cout << ss.str() << std::endl;
 }
+
+u_char* copyBinaryData(const u_char* source, size_t offset, size_t length) {
+    u_char* data = new u_char[length];
+    std::memcpy(data, source + offset, length);
+
+    return data;
+}
 #endif

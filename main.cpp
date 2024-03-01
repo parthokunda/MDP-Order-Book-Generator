@@ -35,38 +35,37 @@ int main(int argc, char* argv[]){
 
 
     int pckt_num = 1;
-    OrderBook orderbook;
+    OrderBook orderbook(16777);
     while ((packet = pcap_next(handle, &header)) != nullptr) {
         UDP udp = UDP(packet + 34);
         if (udp.src_port == 319 || udp.src_port == 320) continue;
 
         CBE cbe = CBE(udp.payload, udp.payload_length);
-        std::cout << pckt_num << std::endl;
+        // std::cout << pckt_num << std::endl;
         for (Message msg:cbe.messages){
             if(msg.template_id == 52){
-                // printPacket(msg.payload, msg.payload_len);
                 SnapShotFullRefresh snapshot(msg.payload);
-                return 0;
-                if(DEBUG){
-                    cout << pckt_num << " Sendtime: " <<  epochToReadable(cbe.header.sendtime) << "\t Sequence Number: " << cbe.header.msg_seq_num << endl;
-                    cout << "Last MSG seq: " << snapshot.lastmsgSeqNumProcessed << "\t RptSeq: " << snapshot.rpt_seq << endl;
-                    cout << "Transact Time: " << epochToReadable(snapshot.transact_time) << endl;
-                    if (pckt_num > 10000) {
-                        return 0;
-                    }
+                // std::cout << snapshot.security_id << endl;
+                for (int i = 0; i < snapshot.ssrgs.group_cnt; i++){
+                    orderbook.addEntry(snapshot.ssrgs.groups[i], cbe.header.sendtime);
                 }
-                // for (SnapShotRefreshGroup ssrg : snapshot.ssrgs.groups)
-                //     if(snapshot.security_id == 167677){
-                //         // orderbook.addEntry(ssrg, cbe.header.sendtime);
-                //         ;
+                // break;
+                // return 0;
+                // if(DEBUG){
+                //     cout << pckt_num << " Sendtime: " <<  epochToReadable(cbe.header.sendtime) << "\t Sequence Number: " << cbe.header.msg_seq_num << endl;
+                //     cout << "Last MSG seq: " << snapshot.lastmsgSeqNumProcessed << "\t RptSeq: " << snapshot.rpt_seq << endl;
+                //     cout << "Transact Time: " << epochToReadable(snapshot.transact_time) << endl;
+                //     if (pckt_num > 10000) {
+                //         return 0;
+                //     }
                 // }
             }
         }
-        // pckt_num++;
+        pckt_num++;
         // ports.insert(udp_src_port);
         // template_ids.insert(template_id);
     }
-    // orderbook.printBook();
+    orderbook.printBook();
 
     pcap_close(handle);
     // for (auto port: ports){

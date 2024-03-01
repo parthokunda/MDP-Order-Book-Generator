@@ -41,31 +41,34 @@ struct OrderBook{
     int32_t security_id;
     std::map<int, OrderBookEntry>bids;
     std::map<int, OrderBookEntry>asks;
+    OrderBook(int32_t sec_id){
+        this->security_id = sec_id;
+    }
     bool addEntry(SnapShotRefreshGroup ssrg, int64_t sending_time){
-        std::cout << "addEntry\n";
         int level = ssrg.price_level;
+        std::cout << ssrg.price_level << std::endl;
         if (ssrg.entry_type == 0){
-            std::cout << "adding\n";
             if(bids.find(level) == bids.end()){
                 bids[level] = OrderBookEntry(ssrg, sending_time);
                 return true;
             }
             else return bids[level].updateEntry(ssrg, sending_time);
-            std::cout << "done\n";
         }
-        // else if(ssrg.entry_type == 1){
-        //     if(asks.find(level) == asks.end()){
-        //         asks[level] = OrderBookEntry(ssrg, sending_time);
-        //         return true;
-        //     }
-        //     else return asks[level].updateEntry(ssrg, sending_time);
-        // }
+        else if(ssrg.entry_type == 1){
+            if(asks.find(level) == asks.end()){
+                asks[level] = OrderBookEntry(ssrg, sending_time);
+                return true;
+            }
+            else return asks[level].updateEntry(ssrg, sending_time);
+        }
+        else if(ssrg.entry_type == 6){
+            return false; //settlement not important?
+        }
         else {
             printf("What type of entry type is this\n");
             std::cout << ssrg.entry_type << std::endl;
             return false;
         }
-        std::cout << "addEntry done\n";
     }
 
     void printBook()
@@ -87,7 +90,8 @@ struct OrderBook{
         {
             if (bidIt != bids.end())
             {
-                std::cout << std::left << std::setw(12) << bidIt->second.order_count
+                std::cout << std::left << std::setw(12) << bidIt->second.price_level
+                          << std::left << std::setw(12) << bidIt->second.order_count
                           << std::left << std::setw(12) << bidIt->second.quantity
                           << std::left << std::setw(12) << std::fixed << std::setprecision(2) << bidIt->second.price;
                 ++bidIt;
@@ -96,19 +100,22 @@ struct OrderBook{
             {
                 std::cout << std::left << std::setw(12) << ""
                           << std::left << std::setw(12) << ""
+                          << std::left << std::setw(12) << ""
                           << std::left << std::setw(12) << "";
             }
 
             if (askIt != asks.end())
             {
-                std::cout << std::left << std::setw(12) << std::fixed << std::setprecision(2) << askIt->second.price
+                std::cout << std::left << std::setw(12) << askIt->second.price_level
+                          << std::left << std::setw(12) << askIt->second.order_count
                           << std::left << std::setw(12) << askIt->second.quantity
-                          << std::left << std::setw(12) << askIt->second.order_count;
+                          << std::left << std::setw(12) << std::fixed << std::setprecision(2) << askIt->second.price;
                 ++askIt;
             }
             else
             {
                 std::cout << std::left << std::setw(12) << ""
+                          << std::left << std::setw(12) << ""
                           << std::left << std::setw(12) << ""
                           << std::left << std::setw(12) << "";
             }
