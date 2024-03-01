@@ -1,19 +1,38 @@
 #include<pcap/pcap.h>
-#include<iostream>
-#include<map>
-#include<vector>
-#include<set>
 #include<bits/stdc++.h>
+#include "udp.h"
+#include "cbe.h"
+#include "snapshotRefresh.h"
 
 using namespace std;
+bool DEBUG = false;
 
-int32_t convertBinaryToInt(const u_char* data, int offset, int length) {
-    int32_t result = 0;
-    for (int i = 0; i < length; ++i) {
-        result <<= 8;
-        result |= (data[offset + i] & 0xFF);
-    }
-    return result;
+std::string epochToReadable(int64_t epochNano) {
+    // Convert nanoseconds since epoch to seconds since epoch
+    auto epochSeconds = std::chrono::seconds(epochNano / 1000000000);
+
+    // Remaining nanoseconds within the current second
+    auto nanos = std::chrono::nanoseconds(epochNano % 1000000000);
+
+    // Create a system_clock time point
+    auto epochTimePoint = std::chrono::time_point<std::chrono::system_clock>(epochSeconds + nanos);
+
+    // Convert to time_t which is easier to convert to tm structure
+    auto timeT = std::chrono::system_clock::to_time_t(epochTimePoint);
+
+    // Convert to tm structure representing local time
+    std::tm* ptm = std::localtime(&timeT);
+
+    // Format the time to a human-readable string
+    char buffer[64];
+    std::strftime(buffer, sizeof(buffer), "%H:%M:%S", ptm);
+
+    // Add the fractional seconds part
+    std::stringstream ss;
+    ss << std::put_time(ptm, "%H:%M:%S");
+    ss << '.' << std::setfill('0') << std::setw(9) << (epochNano % 1000000000);
+
+    return ss.str();
 }
 
 void printPacket(const u_char* packet, int len){
@@ -25,6 +44,15 @@ void printPacket(const u_char* packet, int len){
         ss << std::hex << std::setw(2) << std::setfill('0') << (int)packet[i] << ' ';
     }
     std::cout << ss.str() << std::endl;
+}
+
+void process_snapshot_full_refresh(const u_char* packet){
+
+}
+
+void process_messages(const u_char* packet){
+    int64_t sending_time = convertBinaryToInt64(packet, 4, 8);
+    
 }
 
 int main(int argc, char* argv[]){
@@ -39,30 +67,40 @@ int main(int argc, char* argv[]){
     const u_char* packet;
     struct pcap_pkthdr header;
     set<int32_t> ports;
+    set<int32_t> template_ids;
 
-    int i = 0;
+
+    int pckt_num = 1;
     while ((packet = pcap_next(handle, &header)) != nullptr) {
-        int32_t udp_src_port = (int32_t)convertBinaryToInt(packet, 34, 2);
-        i++;
-        ports.insert(udp_src_port);
+        UDP udp = UDP(packet + 34);
+        if (udp.src_port == 319 || udp.src_port == 320) continue;
 
+        CBE cbe = CBE(udp.payload, udp.payload_length);
+        for (Message msg:cbe.messages){
+            if(msg.template_id == 52){
+                SnapShotFullRefresh snapshot(msg.payload);
+                if(DEBUG){
+                    cout << pckt_num << " Sendtime: " <<  epochToReadable(cbe.header.sendtime) << "\t Sequence Number: " << cbe.header.msg_seq_num << endl;
+                    cout << "Last MSG seq: " << snapshot.lastmsgSeqNumProcessed << "\t RptSeq: " << snapshot.rpt_seq << endl;
+                    cout << "Transact Time: " << epochToReadable(snapshot.transact_time) << endl;
+                    if (pckt_num > 10000) {
+                        return 0;
+                    }
+                }
+            }
+        }
 
-        // std::cout << "Packet capture length: " << header.caplen << std::endl;
-        // std::cout << "Packet total length: " << header.len << std::endl;
-
-        // // Convert timestamp to readable format
-        // std::time_t packet_time = header.ts.tv_sec;
-        // std::string time_str = std::ctime(&packet_time);
-        // std::cout << "Timestamp: " << time_str.substr(0, time_str.length() - 1) << std::endl;  // Remove trailing newline
-
-        // std::cout << "------" << std::endl;
-        // Assuming packet is a pointer to the start of the Ethernet frame
-        // template_ids.insert(packet[58]);
+        pckt_num++;
+        // ports.insert(udp_src_port);
+        // template_ids.insert(template_id);
     }
 
     pcap_close(handle);
-    for (auto port: ports){
-        std::cout << port << endl;
-    }
+    // for (auto port: ports){
+    //     std::cout << port << endl;
+    // }
+    // for (auto templ : template_ids){
+    //     std::cout << templ << std::endl;
+    // }
     return 0;
 }
