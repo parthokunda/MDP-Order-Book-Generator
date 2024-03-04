@@ -3,11 +3,6 @@
 #include<bits/stdc++.h>
 #include"snapshotRefresh.h"
 
-enum OrderEntryType {
-    Bid = 0,
-    Ask = 1,
-};
-
 struct OrderBookEntry{
     int64_t sending_time;
     int order_count; 
@@ -25,7 +20,6 @@ struct OrderBookEntry{
     }
     bool updateEntry(SnapShotRefreshGroup ssrg, int64_t sending_time){
         if (this->sending_time > sending_time){
-            // std::cout << "Already Updated. Skipping\n";
             return false;
         }
         this->sending_time = sending_time;
@@ -80,52 +74,44 @@ struct OrderBook{
 
     void printBook()
     {
-        std::cout << std::left << std::setw(12) << "Bid"
-                  << std::left << std::setw(12) << "Order Count"
-                  << std::left << std::setw(12) << "Quantity"
-                  << std::left << std::setw(12) << "Price" << std::endl;
+        std::cout << "Security ID: " << this->security_id << "\n\n";
+        if(bids.size() == 0){
+            std::cout << "No Buy Orders Recorded\n";
+        }
+        else{
+            std::cout << std::left << std::setw(12) << "Bid"
+                    << std::left << std::setw(12) << "Order Count"
+                    << std::left << std::setw(12) << "Quantity"
+                    << std::left << std::setw(12) << "Price" << std::endl;
 
-        for(auto bidIt = bids.begin(); bidIt != bids.end(); bidIt++)
-        {
-            std::cout << std::left << std::setw(12) << bidIt->second.price_level
-                        << std::left << std::setw(12) << bidIt->second.order_count
-                        << std::left << std::setw(12) << bidIt->second.quantity
-                        << std::left << std::setw(20) << std::fixed << std::setprecision(2) << bidIt->second.price * 1e-9;
-                // std::cout << std::left << std::setw(12) << ""
-                //           << std::left << std::setw(12) << ""
-                //           << std::left << std::setw(12) << ""
-                //           << std::left << std::setw(20) << "";
-
-            // if (askIt != asks.end())
-            // {
-            //     std::cout << std::left << std::setw(12) << askIt->second.price_level
-            //               << std::left << std::setw(12) << askIt->second.order_count
-            //               << std::left << std::setw(12) << askIt->second.quantity
-            //               << std::left << std::setw(12) << std::fixed << std::setprecision(2) << askIt->second.price;
-            //     ++askIt;
-            // }
-            // else
-            // {
-            //     std::cout << std::left << std::setw(12) << ""
-            //               << std::left << std::setw(12) << ""
-            //               << std::left << std::setw(12) << ""
-            //               << std::left << std::setw(12) << "";
-            // }
+            for(auto bidIt = bids.begin(); bidIt != bids.end(); bidIt++)
+            {
+                std::cout << std::left << std::setw(12) << bidIt->second.price_level
+                            << std::left << std::setw(12) << bidIt->second.order_count
+                            << std::left << std::setw(12) << bidIt->second.quantity
+                            << std::left << std::setw(20) << std::fixed << std::setprecision(2) << bidIt->second.price * 1e-9;
+                std::cout << std::endl;
+            }
             std::cout << std::endl;
         }
-        std::cout << "Ask Size: " << asks.size() << std::endl;
-        std::cout << std::left << std::setw(12) << "Ask"
-                << std::left << std::setw(12) << "Quantity"
-                << std::left << std::setw(12) << "Order Count"
-                << std::left << std::setw(12) << "Price" << std::endl;
-        for(auto askIt = asks.begin(); askIt != asks.end(); askIt++){
-            std::cout << std::left << std::setw(12) << askIt->second.price_level
-                    << std::left << std::setw(12) << askIt->second.order_count
-                    << std::left << std::setw(12) << askIt->second.quantity
-                    << std::left << std::setw(20) << std::fixed << std::setprecision(2) << askIt->second.price * 1e-9
-                    << std::endl;
+
+        if(asks.size() == 0){
+            std::cout << "No Ask Orders Recorded\n";
         }
-        std::cout << std::endl;
+        else {
+            std::cout << std::left << std::setw(12) << "Ask"
+                    << std::left << std::setw(12) << "Quantity"
+                    << std::left << std::setw(12) << "Order Count"
+                    << std::left << std::setw(12) << "Price" << std::endl;
+            for(auto askIt = asks.begin(); askIt != asks.end(); askIt++){
+                std::cout << std::left << std::setw(12) << askIt->second.price_level
+                        << std::left << std::setw(12) << askIt->second.order_count
+                        << std::left << std::setw(12) << askIt->second.quantity
+                        << std::left << std::setw(20) << std::fixed << std::setprecision(2) << askIt->second.price * 1e-9
+                        << std::endl;
+            }
+            std::cout << std::endl ;
+        }
     }
 };
 
@@ -143,6 +129,13 @@ struct OrderBookCollection{
     }
 
     void printOrderBook(int32_t security_id){
+        if(security_id == 0){
+            std::vector<int32_t> all_security_ids;
+            for(auto it : this->collection){
+                all_security_ids.push_back(it.first);
+            }
+            security_id = all_security_ids[getRandomNumber(all_security_ids.size())];
+        }
         auto orderBookIt = collection.find(security_id);
         if (orderBookIt == collection.end()){
             std::cout << "Sorry. Could not find orderbook with this Security ID" << std::endl;
@@ -153,6 +146,7 @@ struct OrderBookCollection{
     
     void printSecurityIDs(){
         std::cout << "Total OrderBooks : " << collection.size() << std::endl;
+        std:: cout << "Security IDs: ";
         for(auto it:collection){
             std::cout << it.first << " ";
         }

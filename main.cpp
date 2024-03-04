@@ -11,6 +11,11 @@ using namespace std;
 bool DEBUG = false;
 
 int main(int argc, char* argv[]){
+    if(argc < 2){
+        std::cout << "Pass a pcap file as argument.\n";
+        return 1;
+    }
+
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_t *handle = pcap_open_offline(argv[1], errbuf);
 
@@ -34,24 +39,42 @@ int main(int argc, char* argv[]){
         for (Message msg:cbe.messages){
             if(msg.template_id == 52){
                 SnapShotFullRefresh snapshot(msg.payload);
-                // if(snapshot.security_id != 212679) continue;
                 orderbooks.updateOrderBook(snapshot, cbe.header.sendtime);
             }
         }
+    }
+    pcap_close(handle);
 
-
-        if(pckt_num == 10000) break;
-
+    std::cout << "ORDER BOOK\n";
+    while(1){
+        std::cout << "--------------------------------\n";
+        std::cout << "1. LIST SECURITY IDs AVAILABLE\n2. PRINT ORDER BOOK\n3. EXIT\nCHOOSE OPTION NUMBER: ";
+        int command;
+        std::cin >> command;
+        if(cin.fail()){
+            std::cout << "Invalid Input.\n";
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Remove bad input
+        }
+        else if(command == 1){
+            std::cout << std::endl;
+            orderbooks.printSecurityIDs();
+        }
+        else if(command == 2){
+            std::cout << "\nENTER SECURITY ID(0 for random one): ";
+            int sec_id;
+            std::cin >> sec_id;
+            std::cout << '\n';
+            orderbooks.printOrderBook(sec_id);
+        }
+        else if(command == 3){
+            break;
+        }
+        else{
+            std::cout << "Invalid Input.\n";
+        }
+        std::cout << std::endl;
     }
 
-    orderbooks.printOrderBook(4846);
-    // orderbooks.printSecurityIDs();
-    // orderbooks.printOrderBook(167677);
-    // std::cerr << pckt_num << std::endl;
-
-
-
-
-    pcap_close(handle);
     return 0;
 }
