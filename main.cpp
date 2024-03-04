@@ -5,6 +5,7 @@
 #include "snapshotRefresh.h"
 #include "orderbook.h"
 #include "utils.h"
+#include "snapshotRefreshBook.hpp"
 
 using namespace std;
 bool DEBUG = false;
@@ -21,15 +22,15 @@ int main(int argc, char* argv[]){
     const u_char* packet;
     struct pcap_pkthdr header;
 
-    int pckt_num = 1;
+    int pckt_num = 0;
     OrderBookCollection orderbooks;
 
     while ((packet = pcap_next(handle, &header)) != nullptr) {
+        pckt_num++;
         UDP udp = UDP(packet + 34);
         if (udp.src_port == 319 || udp.src_port == 320) continue;
 
         CBE cbe = CBE(udp.payload, udp.payload_length);
-        // std::cout << pckt_num << std::endl;
         for (Message msg:cbe.messages){
             if(msg.template_id == 52){
                 SnapShotFullRefresh snapshot(msg.payload);
@@ -37,12 +38,16 @@ int main(int argc, char* argv[]){
                 orderbooks.updateOrderBook(snapshot, cbe.header.sendtime);
             }
         }
-        pckt_num++;
+
+
+        if(pckt_num == 10000) break;
+
     }
 
-    orderbooks.printSecurityIDs();
-    orderbooks.printOrderBook(167677);
-    std::cerr << pckt_num << std::endl;
+    orderbooks.printOrderBook(4846);
+    // orderbooks.printSecurityIDs();
+    // orderbooks.printOrderBook(167677);
+    // std::cerr << pckt_num << std::endl;
 
 
 
