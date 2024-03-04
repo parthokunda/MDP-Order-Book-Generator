@@ -20,3 +20,9 @@ unzstd dc3-glbx-a-20230716T133000.pcap.zst
 g++ -std=c++17 main.cpp -o main.o -lpcap
 # run file
 ./main.o dc3-glbx-a-20230716T133000.pcap
+```
+Follow Command Line prompts to generate orderbook for a particular security ID.
+
+## Approach to Generate Orderbook
+* Update the orderbook for a security if there is a Snapshot Full Refresh (Template ID: 52).
+* Higher sending time means more updated book, and showing the most updated book in the end.
